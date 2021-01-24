@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import io.grimlock257.sccc.newsapi.model.ArticleResponse;
 import io.grimlock257.sccc.newsapi.model.NewsResponse;
 import io.grimlock257.sccc.newsapi.model.NewsApiResponse;
+import io.grimlock257.sccc.newsapi.util.FileUtil;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
@@ -11,9 +12,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.List;
-import javax.json.Json;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
 import javax.ws.rs.Produces;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -39,10 +37,14 @@ public class News {
     ) {
         List<ArticleResponse> articles = requestNews(name);
 
-        if (articles != null) {
-            return gson.toJson(new NewsResponse(articles));
-        } else {
+        if (articles == null) {
+            articles = FileUtil.loadNewsForName(name);
+        }
+
+        if (articles == null) {
             return gson.toJson(new NewsResponse());
+        } else {
+            return gson.toJson(new NewsResponse(articles));
         }
     }
 
@@ -82,15 +84,19 @@ public class News {
                 throw new IOException("Status was not ok");
             }
 
-            return newsApiResponse.getArticles();
+            List<ArticleResponse> articles = newsApiResponse.getArticles();
+
+            FileUtil.saveNewsForName(name, articles);
+
+            return articles;
         } catch (MalformedURLException e) {
-            System.err.println("Malformed URL: " + e.getMessage());
+            System.err.println("[NewsAPI] Malformed URL: " + e.getMessage());
         } catch (IOException e) {
-            System.err.println("IOException connecting to URL: " + e.getMessage());
+            System.err.println("[NewsAPI] IOException connecting to URL: " + e.getMessage());
         } catch (NullPointerException e) {
-            System.err.println("NPE: " + e.getMessage());
+            System.err.println("[NewsAPI] NPE: " + e.getMessage());
         } catch (ClassCastException e) {
-            System.err.println("ClassCastException (Logo is likely null): " + e.getMessage());
+            System.err.println("[NewsAPI] ClassCastException (Logo is likely null): " + e.getMessage());
         }
 
         return null;
