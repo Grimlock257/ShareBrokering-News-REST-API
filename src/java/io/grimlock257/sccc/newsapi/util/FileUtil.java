@@ -29,7 +29,7 @@ public class FileUtil {
         Gson gson = new Gson();
 
         try {
-            return gson.fromJson(new String(Files.readAllBytes(Paths.get("./news/" + name.toLowerCase() + ".json"))), List.class);
+            return gson.fromJson(new String(Files.readAllBytes(Paths.get("./sharesBrokering/news/" + name.toLowerCase() + ".json"))), List.class);
         } catch (IOException e) {
             System.err.println("[NewsAPI] IOException while trying to read articles from " + name.toLowerCase() + ".json: " + e.getMessage());
         }
@@ -47,7 +47,7 @@ public class FileUtil {
         Gson gson = new Gson();
 
         // Create the folder if it doesn't already exist
-        File file = new File("./news/" + name.toLowerCase() + ".json");
+        File file = new File("./sharesBrokering/news/" + name.toLowerCase() + ".json");
         file.getParentFile().mkdirs();
 
         // Attempt to write the file
