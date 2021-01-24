@@ -1,10 +1,16 @@
 package io.grimlock257.sccc.newsapi.paths;
 
+import com.google.gson.Gson;
+import io.grimlock257.sccc.newsapi.model.ArticleResponse;
+import io.grimlock257.sccc.newsapi.model.NewsResponse;
+import io.grimlock257.sccc.newsapi.model.NewsApiResponse;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.List;
 import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
@@ -24,17 +30,19 @@ import javax.ws.rs.core.MediaType;
 @Path("news")
 public class News {
 
+    private final Gson gson = new Gson();
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public String getJson(
             @QueryParam("name") String name
     ) {
-        String news = requestNews(name);
+        List<ArticleResponse> articles = requestNews(name);
 
-        if (news != null) {
-            return news;
+        if (articles != null) {
+            return gson.toJson(new NewsResponse(articles));
         } else {
-            return "{ \"status\": \"error\" }";
+            return gson.toJson(new NewsResponse());
         }
     }
 
@@ -44,7 +52,7 @@ public class News {
      * @param name The name of the company to find a news articles for
      * @return The news response JSON or null if error
      */
-    private String requestNews(String name) {
+    private List<ArticleResponse> requestNews(String name) {
         try {
             // Request components
             String baseUrl = "https://newsapi.org/v2/everything";
@@ -66,16 +74,15 @@ public class News {
                 throw new IOException(conn.getResponseMessage());
             }
 
-            // Retrieve the connection input stream and store as a JsonObject
-            JsonReader jsonReader = Json.createReader(conn.getInputStream());
-            JsonObject jsonObject = jsonReader.readObject();
+            // Deserialise the JSON response
+            NewsApiResponse newsApiResponse = gson.fromJson(new InputStreamReader(conn.getInputStream(), "UTF-8"), NewsApiResponse.class);
 
             // If the status is not ok, throw an error
-            if (!jsonObject.getString("status").equals("ok")) {
+            if (!newsApiResponse.getStatus().equals("ok")) {
                 throw new IOException("Status was not ok");
             }
 
-            return jsonObject.toString();
+            return newsApiResponse.getArticles();
         } catch (MalformedURLException e) {
             System.err.println("Malformed URL: " + e.getMessage());
         } catch (IOException e) {
